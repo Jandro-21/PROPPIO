@@ -18,14 +18,14 @@ function App() {
   }, []);
 
   return (
-    <Router>
+    /* El basename es fundamental para que GitHub Pages encuentre las rutas */
+    <Router basename="/PROPPIO">
       <div className="app-container">
-        {/* Sidebar global */}
+        {/* Sidebar global que aparece en todas las vistas */}
         <Sidebar /> 
 
         <main className="main-content">
           <Routes>
-            {/* Solo las rutas de archivos que existen actualmente */}
             <Route path="/" element={<Landing />} />
             <Route 
               path="/shop" 
