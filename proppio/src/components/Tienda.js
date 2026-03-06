@@ -13,7 +13,7 @@ export default function Tienda() {
       precio: '17.99€', 
       // Añadimos un array de imágenes para el carrusel
       imgs: [
-        '../JapanDropFront.png',
+        'PROPPIO./JapanDropFront.png',
         '../JapanDropBack.png'
       ],
       descripcion: 'Algodón 100% orgánico con bordado de alta densidad.'
