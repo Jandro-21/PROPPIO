@@ -1,60 +1,83 @@
-// eslint-disable-next-line
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom'; // Importante para la navegación
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 export default function Tienda() {
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [currentImgIndex, setCurrentImgIndex] = useState(0);
   const [isStreetwear, setIsStreetwear] = useState(false);
 
-  const toggleTheme = () => {
-    const newMode = !isStreetwear;
-    setIsStreetwear(newMode);
-    if (newMode) {
-      document.documentElement.setAttribute('data-theme', 'streetwear');
-    } else {
-      document.documentElement.removeAttribute('data-theme');
-    }
-  };
-
   const productos = [
-    { id: 1, nombre: 'Camiseta Proppio Bordada', precio: '17.99€', img: 'public/unisex-classic-tee-white-front-and-back-69a5f36b451fd.png' },
-    
+    { 
+      id: 1, 
+      nombre: 'Camiseta Proppio Bordada', 
+      precio: '17.99€', 
+      // Añadimos un array de imágenes para el carrusel
+      imgs: [
+        './JapanDropFront.png',
+        './JapanDropBack.png'
+      ],
+      descripcion: 'Algodón 100% orgánico con bordado de alta densidad.'
+    },
   ];
+
+  const nextImg = () => setCurrentImgIndex((prev) => (prev === 0 ? 1 : 0));
 
   return (
     <div className="shop-wrapper">
       <nav className="navbar">
-        {/* LOGO CON LINK A LA LANDING */}
-        <Link to="/" className="logo-link">
-          <div className="logo-studio">PROPPIO.</div>
-        </Link>
-
-        <div className="nav-actions">
-          <button onClick={toggleTheme} className="btn-customize">
-            {isStreetwear ? 'MODO MINIMAL' : 'MODO STREETWEAR'}
-          </button>
-        </div>
+        <Link to="/" className="logo-link"><div className="logo-studio">PROPPIO.</div></Link>
       </nav>
 
       <header className="hero">
         <h1>{isStreetwear ? 'DROP 001: CYBER' : 'COLECCIÓN ESSENTIAL'}</h1>
-        <p>Prendas diseñadas para el día a día, fabricadas para durar.</p>
       </header>
 
       <main className="grid-productos">
         {productos.map((prod) => (
-          <div key={prod.id} className="card-producto">
+          <div key={prod.id} className="card-producto" onClick={() => { setSelectedProduct(prod); setCurrentImgIndex(0); }}>
             <div className="card-image-wrapper">
-              <span className="product-tag">{prod.tag}</span>
-              <img src={prod.img} alt={prod.nombre} />
+              <img src={prod.imgs[0]} alt={prod.nombre} />
             </div>
             <div className="card-info">
               <h3>{prod.nombre}</h3>
               <span className="precio">{prod.precio}</span>
-              <button className="btn-tool-main">COMPRAR</button>
             </div>
           </div>
         ))}
       </main>
+
+      {/* VISTA DE DETALLE (Pestaña/Modal) */}
+      {selectedProduct && (
+        <div className="product-detail-overlay">
+          <div className="product-detail-content">
+            <button className="close-detail" onClick={() => setSelectedProduct(null)}>✕</button>
+            
+            <div className="detail-layout">
+              {/* Carrusel */}
+              <div className="carousel-container" onClick={nextImg}>
+                <img src={selectedProduct.imgs[currentImgIndex]} alt="Detalle" />
+                <div className="carousel-dots">
+                  <span className={currentImgIndex === 0 ? 'active' : ''}></span>
+                  <span className={currentImgIndex === 1 ? 'active' : ''}></span>
+                </div>
+                <small className="tap-hint">Toca para cambiar de foto</small>
+              </div>
+
+              {/* Info y Botón estilo Landing */}
+              <div className="detail-info">
+                <h2>{selectedProduct.nombre}</h2>
+                <p className="detail-price">{selectedProduct.precio}</p>
+                <p className="detail-desc">{selectedProduct.descripcion}</p>
+                
+                {/* Botón con la clase btn-proppio (el de la Landing) */}
+                <button className="btn-proppio" style={{ marginTop: '20px' }}>
+                  COMPRAR AHORA
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
