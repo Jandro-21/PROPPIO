@@ -16,8 +16,8 @@ export default function Tienda() {
       // Usamos `${publicPath}` antes de cada nombre de archivo
       imgs: [
 
-        `public/JapanDropFront.png`, 
-        `${publicPath}/public/JapanDropBack.png` 
+        `./JapanDropFront.png`, 
+        `./JapanDropBack.png` 
 
       ],
       descripcion: 'Algodón 100% orgánico con bordado de alta densidad.'
