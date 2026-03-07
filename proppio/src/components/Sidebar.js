@@ -20,7 +20,7 @@ export default function Sidebar({ categoriaActiva, setCategoriaActiva, isOpen, t
           <Link to="/" className="logo-link" onClick={toggleSidebar}>
             <div className="logo-studio">PROPPIO.</div>
           </Link>
-          <button className="close-sidebar" onClick={toggleSidebar}>✕</button>
+          
         </div>
 
         <nav className="sidebar-nav">
