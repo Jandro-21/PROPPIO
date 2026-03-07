@@ -16,7 +16,7 @@ export default function Tienda() {
       // Usamos `${publicPath}` antes de cada nombre de archivo
       imgs: [
 
-        `${publicPath}/public/JapanDropFront.png`, 
+        `public/JapanDropFront.png`, 
         `${publicPath}/public/JapanDropBack.png` 
 
       ],
