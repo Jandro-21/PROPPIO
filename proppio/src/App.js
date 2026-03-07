@@ -7,9 +7,16 @@ import './App.css';
 
 function App() {
   const [cart, setCart] = useState([]);
+  const [categoriaActiva, setCategoriaActiva] = useState('TODOS');
+  // Estado para abrir/cerrar el menú en móvil
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const addToCart = (product) => {
     setCart([...cart, { ...product, cartId: Date.now() }]);
+  };
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
   };
 
   useEffect(() => {
@@ -18,18 +25,28 @@ function App() {
   }, []);
 
   return (
-    /* El basename es fundamental para que GitHub Pages encuentre las rutas */
     <Router basename="/PROPPIO">
       <div className="app-container">
-        {/* Sidebar global que aparece en todas las vistas */}
-        <Sidebar /> 
+        {/* Pasamos los estados y funciones al Sidebar */}
+        <Sidebar 
+          categoriaActiva={categoriaActiva} 
+          setCategoriaActiva={setCategoriaActiva}
+          isOpen={isSidebarOpen}
+          toggleSidebar={toggleSidebar}
+        /> 
 
         <main className="main-content">
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route 
               path="/shop" 
-              element={<Tienda cartCount={cart.length} addToCart={addToCart} />} 
+              element={
+                <Tienda 
+                  categoriaActiva={categoriaActiva} 
+                  cartCount={cart.length} 
+                  addToCart={addToCart} 
+                />
+              } 
             />
           </Routes>
         </main>
