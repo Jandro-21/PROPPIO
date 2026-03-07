@@ -15,8 +15,10 @@ export default function Tienda() {
       precio: '17.99€', 
       // Usamos `${publicPath}` antes de cada nombre de archivo
       imgs: [
-        '../JapanDropFront.png',
-        '../JapanDropBack.png'
+
+        `${publicPath}/public/JapanDropFront.png`, 
+        `${publicPath}/public/JapanDropBack.png` 
+
       ],
       descripcion: 'Algodón 100% orgánico con bordado de alta densidad.'
     },
