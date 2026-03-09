@@ -7,84 +7,70 @@ export default function Tienda({ categoriaActiva }) {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
 
-  // URL corregida de tu Worker
   const CLOUDFLARE_WORKER_URL = 'https://proppio-api.alejandrodurillovargas21.workers.dev';
 
   useEffect(() => {
     setLoading(true);
-    
     fetch(CLOUDFLARE_WORKER_URL)
-      .then((res) => {
-        // Si el servidor da error (401, 404, 500), lo capturamos aquí
-        if (!res.ok) {
-          return res.json().then(err => { throw new Error(JSON.stringify(err)) });
-        }
-        return res.json();
-      })
+      .then((res) => res.json())
       .then((data) => {
-        console.log("Datos que llegan:", data);
+        console.log("Datos brutos de la API:", data);
 
-        // SOLO si data.result existe y es una lista, hacemos el map
         if (data && data.result && Array.isArray(data.result)) {
-          const productosPrintful = data.result.map((p) => ({
-            id: p.id,
-            nombre: p.name,
-            precio: '19.99€',
-            categoria: 'CAMISETAS',
-            imgs: [p.thumbnail_url],
-            descripcion: 'Producto original de la colección PROPPIO.'
-          }));
-          setProductos(productosPrintful);
-        } else {
-          console.warn("La respuesta no tiene el formato esperado:", data);
-          setProductos([]);
+          const productosProcesados = data.result.map((item) => {
+            // Caso 1: El Worker te da detalles completos (sync_product existe)
+            if (item.sync_product) {
+              return {
+                id: item.sync_product.id,
+                nombre: item.sync_product.name,
+                precio: item.sync_variants[0].retail_price + '€',
+                imgs: [item.sync_product.thumbnail_url],
+                variantId: item.sync_variants[0].id,
+                descripcion: 'Producto oficial PROPPIO.'
+              };
+            } 
+            // Caso 2: El Worker te da la lista básica (p.id existe directamente)
+            return {
+              id: item.id,
+              nombre: item.name,
+              precio: '17.99€', // Precio de seguridad
+              imgs: [item.thumbnail_url],
+              variantId: item.id, // Usamos el ID normal si no hay variante
+              descripcion: 'Producto oficial PROPPIO.'
+            };
+          });
+          setProductos(productosProcesados);
         }
         setLoading(false);
       })
       .catch((err) => {
-        console.error("Error capturado:", err.message);
+        console.error("Error cargando:", err);
         setLoading(false);
       });
   }, []);
-  
-  // Lógica de filtrado
-  const productosFiltrados = categoriaActiva === 'TODOS' 
-    ? productos 
-    : productos.filter(p => p.categoria === categoriaActiva);
 
-  const nextImg = (e) => {
-    e.stopPropagation(); 
-    setCurrentImgIndex((prev) => (prev === 0 ? 1 : 0));
+  const handleBuy = (product) => {
+    // Si tenemos el ID de variante, el enlace al checkout suele ser este:
+    const checkoutUrl = `https://www.printful.com/checkout/create-from-product/${product.variantId}`;
+    window.open(checkoutUrl, '_blank');
   };
 
-  if (loading) {
-    return (
-      <div className="shop-wrapper">
-        <header className="hero"><h1>CARGANDO DROP...</h1></header>
-      </div>
-    );
-  }
+  if (loading) return <div className="shop-wrapper"><header className="hero"><h1>CARGANDO...</h1></header></div>;
 
   return (
     <div className="shop-wrapper">
       <nav className="navbar">
-        <Link to="/" className="logo-link">
-          <div className="logo-studio">PROPPIO.</div>
-        </Link>
+        <Link to="/" className="logo-link"><div className="logo-studio">PROPPIO.</div></Link>
       </nav>
 
       <header className="hero">
-        <h1>{categoriaActiva === 'TODOS' ? 'SHOP' : categoriaActiva}</h1>
+        <h1>{categoriaActiva || 'SHOP'}</h1>
       </header>
 
       <main className="grid-productos">
-        {productosFiltrados.length > 0 ? (
-          productosFiltrados.map((prod) => (
-            <div 
-              key={prod.id} 
-              className="card-producto" 
-              onClick={() => { setSelectedProduct(prod); setCurrentImgIndex(0); }}
-            >
+        {productos.length > 0 ? (
+          productos.map((prod) => (
+            <div key={prod.id} className="card-producto" onClick={() => { setSelectedProduct(prod); setCurrentImgIndex(0); }}>
               <div className="card-image-wrapper">
                 <img src={prod.imgs[0]} alt={prod.nombre} />
               </div>
@@ -95,35 +81,23 @@ export default function Tienda({ categoriaActiva }) {
             </div>
           ))
         ) : (
-          <div className="no-products">
-            <p>No se han podido cargar los productos.</p>
-            <p style={{fontSize: '0.8rem', marginTop: '10px', color: '#666'}}>
-              Revisa la consola (F12) para ver el error de la API.
-            </p>
-          </div>
+          <p style={{textAlign: 'center', gridColumn: '1/-1'}}>No se encontraron productos. Revisa la consola (F12).</p>
         )}
       </main>
 
-      {/* MODAL DE DETALLE */}
       {selectedProduct && (
         <div className="product-detail-overlay" onClick={() => setSelectedProduct(null)}>
           <div className="product-detail-content" onClick={(e) => e.stopPropagation()}>
             <button className="close-detail" onClick={() => setSelectedProduct(null)}>✕</button>
             <div className="detail-layout">
-              <div className="carousel-container" onClick={nextImg}>
-                <img src={selectedProduct.imgs[currentImgIndex]} alt="Detalle" />
-                {selectedProduct.imgs.length > 1 && (
-                  <div className="carousel-dots">
-                    <span className={currentImgIndex === 0 ? 'active' : ''}></span>
-                    <span className={currentImgIndex === 1 ? 'active' : ''}></span>
-                  </div>
-                )}
+              <div className="carousel-container">
+                <img src={selectedProduct.imgs[0]} alt="Detalle" />
               </div>
               <div className="detail-info">
                 <h2>{selectedProduct.nombre}</h2>
                 <p className="detail-price">{selectedProduct.precio}</p>
                 <p className="detail-desc">{selectedProduct.descripcion}</p>
-                <button className="btn-proppio" style={{ marginTop: '20px', width: '100%' }}>
+                <button className="btn-proppio" style={{ marginTop: '20px', width: '100%' }} onClick={() => handleBuy(selectedProduct)}>
                   COMPRAR AHORA
                 </button>
               </div>
