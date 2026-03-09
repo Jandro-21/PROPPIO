@@ -1,29 +1,53 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
-// Recibimos la categoría activa desde el componente padre (App.js)
 export default function Tienda({ categoriaActiva }) {
+  const [productos, setProductos] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
+
+  // URL corregida de tu Worker
+  const CLOUDFLARE_WORKER_URL = 'https://proppio-api.alejandrodurillovargas21.workers.dev';
+
+  useEffect(() => {
+    setLoading(true);
+    
+    fetch(CLOUDFLARE_WORKER_URL)
+      .then((res) => {
+        // Si el servidor da error (401, 404, 500), lo capturamos aquí
+        if (!res.ok) {
+          return res.json().then(err => { throw new Error(JSON.stringify(err)) });
+        }
+        return res.json();
+      })
+      .then((data) => {
+        console.log("Datos que llegan:", data);
+
+        // SOLO si data.result existe y es una lista, hacemos el map
+        if (data && data.result && Array.isArray(data.result)) {
+          const productosPrintful = data.result.map((p) => ({
+            id: p.id,
+            nombre: p.name,
+            precio: '19.99€',
+            categoria: 'CAMISETAS',
+            imgs: [p.thumbnail_url],
+            descripcion: 'Producto original de la colección PROPPIO.'
+          }));
+          setProductos(productosPrintful);
+        } else {
+          console.warn("La respuesta no tiene el formato esperado:", data);
+          setProductos([]);
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error capturado:", err.message);
+        setLoading(false);
+      });
+  }, []);
   
-  const publicPath = process.env.PUBLIC_URL;
-
-  // Array de productos con la categoría "CAMISETAS" asignada
-  const productos = [
-    { 
-      id: 1, 
-      nombre: 'Camiseta Proppio Bordada', 
-      precio: '17.99€', 
-      categoria: 'CAMISETAS', // Debe coincidir con el nombre en el Sidebar
-      imgs: [
-        `${publicPath}/JapanDropFront.png`, 
-        `${publicPath}/JapanDropBack.png` 
-      ],
-      descripcion: 'Algodón 100% orgánico con bordado de alta densidad.'
-    }
-  ];
-
-  // Lógica de filtrado: si es 'TODOS' muestra todo, si no, filtra por categoría
+  // Lógica de filtrado
   const productosFiltrados = categoriaActiva === 'TODOS' 
     ? productos 
     : productos.filter(p => p.categoria === categoriaActiva);
@@ -32,6 +56,14 @@ export default function Tienda({ categoriaActiva }) {
     e.stopPropagation(); 
     setCurrentImgIndex((prev) => (prev === 0 ? 1 : 0));
   };
+
+  if (loading) {
+    return (
+      <div className="shop-wrapper">
+        <header className="hero"><h1>CARGANDO DROP...</h1></header>
+      </div>
+    );
+  }
 
   return (
     <div className="shop-wrapper">
@@ -42,14 +74,17 @@ export default function Tienda({ categoriaActiva }) {
       </nav>
 
       <header className="hero">
-        {/* El título cambia según lo que elijas en el Sidebar */}
         <h1>{categoriaActiva === 'TODOS' ? 'SHOP' : categoriaActiva}</h1>
       </header>
 
       <main className="grid-productos">
         {productosFiltrados.length > 0 ? (
           productosFiltrados.map((prod) => (
-            <div key={prod.id} className="card-producto" onClick={() => { setSelectedProduct(prod); setCurrentImgIndex(0); }}>
+            <div 
+              key={prod.id} 
+              className="card-producto" 
+              onClick={() => { setSelectedProduct(prod); setCurrentImgIndex(0); }}
+            >
               <div className="card-image-wrapper">
                 <img src={prod.imgs[0]} alt={prod.nombre} />
               </div>
@@ -60,7 +95,12 @@ export default function Tienda({ categoriaActiva }) {
             </div>
           ))
         ) : (
-          <p className="no-products">No hay productos en esta categoría.</p>
+          <div className="no-products">
+            <p>No se han podido cargar los productos.</p>
+            <p style={{fontSize: '0.8rem', marginTop: '10px', color: '#666'}}>
+              Revisa la consola (F12) para ver el error de la API.
+            </p>
+          </div>
         )}
       </main>
 
@@ -72,10 +112,12 @@ export default function Tienda({ categoriaActiva }) {
             <div className="detail-layout">
               <div className="carousel-container" onClick={nextImg}>
                 <img src={selectedProduct.imgs[currentImgIndex]} alt="Detalle" />
-                <div className="carousel-dots">
-                  <span className={currentImgIndex === 0 ? 'active' : ''}></span>
-                  <span className={currentImgIndex === 1 ? 'active' : ''}></span>
-                </div>
+                {selectedProduct.imgs.length > 1 && (
+                  <div className="carousel-dots">
+                    <span className={currentImgIndex === 0 ? 'active' : ''}></span>
+                    <span className={currentImgIndex === 1 ? 'active' : ''}></span>
+                  </div>
+                )}
               </div>
               <div className="detail-info">
                 <h2>{selectedProduct.nombre}</h2>
